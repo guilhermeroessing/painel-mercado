@@ -1,0 +1,7 @@
+frontend/out
+frontend/.next
+data
+frontend/public/data
+node_modules
+package-lock.json
+ESCOPO.md

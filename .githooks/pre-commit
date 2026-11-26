@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Barra commit com token da brapi preenchido (ignora exemplos com "..." e este arquivo).
+set -u
+if command -v gitleaks >/dev/null 2>&1; then
+  exec gitleaks protect --staged --redact
+fi
+if git diff --cached -U0 -- . ':!.githooks/pre-commit' | grep -E '^\+.*BRAPI_TOKEN=[A-Za-z0-9_-]{4,}' | grep -vF 'BRAPI_TOKEN=...' >/dev/null; then
+  echo "Commit barrado: linha BRAPI_TOKEN= com valor no diff staged." >&2
+  exit 1
+fi

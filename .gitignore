@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+!.env.example
+frontend/.next/
+frontend/out/
+frontend/public/data/
+frontend/next-env.d.ts
+data/
+*.ZIP
+*.zip
+COTAHIST_*.TXT
+!pipeline/tests/fixtures/**
+.vercel/
+*.tsbuildinfo
+.vercel
+.env*

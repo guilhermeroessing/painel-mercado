@@ -1,0 +1,45 @@
+# Watchlist e endpoints da coleta; códigos e URLs ficam só aqui.
+watchlist:
+  - { ticker: PETR4, nome: Petrobras PN, tipo: acao }
+  - { ticker: PETR3, nome: Petrobras ON, tipo: acao }
+  - { ticker: VALE3, nome: Vale ON, tipo: acao }
+  - { ticker: ITUB4, nome: Itaú Unibanco PN, tipo: acao }
+  - { ticker: BBDC4, nome: Bradesco PN, tipo: acao }
+  - { ticker: BBAS3, nome: Banco do Brasil ON, tipo: acao }
+  - { ticker: ABEV3, nome: Ambev ON, tipo: acao }
+  - { ticker: WEGE3, nome: WEG ON, tipo: acao }
+  - { ticker: B3SA3, nome: B3 ON, tipo: acao }
+  - { ticker: RENT3, nome: Localiza ON, tipo: acao }
+  - { ticker: SUZB3, nome: Suzano ON, tipo: acao }
+  - { ticker: AXIA3, nome: Axia Energia ON, tipo: acao }
+  - { ticker: GGBR4, nome: Gerdau PN, tipo: acao }
+  - { ticker: PRIO3, nome: PRIO ON, tipo: acao }
+  - { ticker: ITSA4, nome: Itaúsa PN, tipo: acao }
+  - { ticker: TOTS3, nome: Totvs ON, tipo: acao }
+  - { ticker: EQTL3, nome: Equatorial ON, tipo: acao }
+  - { ticker: SBSP3, nome: Sabesp ON, tipo: acao }
+  - { ticker: RAIL3, nome: Rumo ON, tipo: acao }
+  - { ticker: HAPV3, nome: Hapvida ON, tipo: acao }
+  - { ticker: CSNA3, nome: CSN ON, tipo: acao }
+  - { ticker: JBSS32, nome: JBS, tipo: acao }
+  - { ticker: RDOR3, nome: Rede D'Or ON, tipo: acao }
+  - { ticker: CMIG4, nome: Cemig PN, tipo: acao }
+  - { ticker: HGLG11, nome: CSHG Logística, tipo: fii }
+  - { ticker: XPML11, nome: XP Malls, tipo: fii }
+  - { ticker: KNRI11, nome: Kinea Renda Imobiliária, tipo: fii }
+  - { ticker: MXRF11, nome: Maxi Renda, tipo: fii }
+  - { ticker: BOVA11, nome: iShares Ibovespa, tipo: etf }
+  - { ticker: IVVB11, nome: iShares S&P 500, tipo: etf }
+
+brapi:
+  base_url: https://brapi.dev/api
+  limite_mensal: 12000
+  timeout_ms: 10000
+
+cotahist:
+  url_anual: https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{ANO}.ZIP
+  ano_inicial: 1995
+
+sgs:
+  url_modelo: https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados?formato=json&dataInicial=dd/MM/aaaa&dataFinal=dd/MM/aaaa
+  cdi: 12

@@ -1,0 +1,38 @@
+name: deploy
+
+on:
+  push:
+    branches: [main, claude/zealous-ritchie-udqtv9]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_VERSAO: ${{ github.sha }}
+      - name: Publicar na Vercel
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::warning::VERCEL_TOKEN, VERCEL_ORG_ID ou VERCEL_PROJECT_ID ausente: deploy ignorado."
+            exit 0
+          fi
+          npx vercel@41.0.2 deploy frontend/out --prod --yes --token "$VERCEL_TOKEN"
