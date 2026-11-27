@@ -1,0 +1,25 @@
+{
+ "feature": "painel-mercado-f1-cotacoes",
+ "phase": "execution",
+ "repos": [
+  {
+   "repo": "guilhermeroessing/painel-mercado",
+   "path": "/home/user/painel-mercado",
+   "branch": "claude/zealous-ritchie-udqtv9",
+   "impeccable": false
+  }
+ ],
+ "tasks": {
+  "T1": {
+   "status": "in_progress",
+   "attempts": 0,
+   "block_reason": null
+  }
+ },
+ "gates": {},
+ "checkpoint": {
+  "at": "2026-11-26T19:09:08",
+  "note": "T1 in_progress"
+ },
+ "paused": null
+}
