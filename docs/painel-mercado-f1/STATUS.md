@@ -25,7 +25,7 @@ Leia primeiro. Os demais arquivos desta pasta são a spec aprovada, o plano e o 
 
 ## Pendências
 
-1. **Deploy na Vercel**: a causa do "Could not retrieve Project Settings" está no próprio `VERCEL_TOKEN`, não no código. Ajuste feito no `deploy.yml`: antes de publicar, uma chamada à API da Vercel mostra o HTTP exato (401/403 indica token sem escopo na equipe, 404 indica ID errado), e a pasta publicada é vinculada ao projeto por `.vercel/project.json`. Falta recriar o `VERCEL_TOKEN` com escopo na equipe `team_z0Wuugwk6KdNUXwMIeTm8OGA`, e conferir `VERCEL_PROJECT_ID` = `prj_vXRlPZZLv0uwNoba68Ro2kFtJBL9`. Não consegui ler os secrets daqui (a API é bloqueada pelo proxy), então isto não foi testado no runner.
+1. **Deploy na Vercel**: diagnóstico confirmado no runner (run `45930566554`). `GET /v2/teams/{VERCEL_ORG_ID}` responde **403 `team_unauthorized`**: o `VERCEL_TOKEN` atual não tem acesso ao time `team_z0Wuugwk6KdNUXwMIeTm8OGA`. O código não é a causa. Ação do Marcelo: recriar o `VERCEL_TOKEN` em vercel.com/account/tokens com escopo no time, e conferir `VERCEL_PROJECT_ID` = `prj_vXRlPZZLv0uwNoba68Ro2kFtJBL9`. O `deploy.yml` agora para no primeiro HTTP de erro e imprime o corpo da resposta, e roda o CLI com `--debug`. Não consegui ler os secrets daqui (a API é bloqueada pelo proxy).
 2. **CI do `lint`** estava vermelho porque o Prettier checava `docs/painel-mercado-f1`. Formatado nesta rodada.
 3. **Token da brapi** cadastrado como Network secret do ambiente "painel-mercado (dados B3)" (host `brapi.dev`, Bearer). Validar as chamadas reais depois de confirmar que a nova sessão enxerga o token.
 
