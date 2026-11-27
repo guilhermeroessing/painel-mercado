@@ -1,314 +1,286 @@
 {
- "feature": "painel-mercado-f1-cotacoes",
- "gate": "lean",
- "deploy_check": {
-  "guilhermeroessing/painel-mercado": "curl -fsS \"${PAINEL_URL:-https://painel-mercado.vercel.app}/\" | grep -q 'name=\"versao\" content=\"<sha>\"'"
- },
- "review": {
-  "scan_effort": "medium",
-  "overrides": {
-   "seguranca": {
-    "effort": "high",
-    "motivo": "BRAPI_TOKEN e VERCEL_TOKEN em workflows com contents:write e force-push da branch data; parâmetro ?t= vira caminho de fetch"
-   },
-   "contratos": {
-    "effort": "high",
-    "motivo": "parse de 3 fontes externas na borda (COTAHIST largura fixa, brapi, SGS) e contrato JSON pipeline→site sem versão"
-   }
-  }
- },
- "tasks": [
-  {
-   "id": "T1",
-   "title": "Fundação do repo e do site (em construção, CI, deploy Vercel)",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "package.json",
-    "package-lock.json",
-    "tsconfig.json",
-    "frontend/tsconfig.json",
-    "eslint.config.mjs",
-    ".prettierrc.json",
-    ".prettierignore",
-    ".gitignore",
-    ".env.example",
-    ".nvmrc",
-    "CLAUDE.md",
-    "README.md",
-    "ESCOPO.md",
-    "vitest.config.ts",
-    "frontend/next.config.ts",
-    "frontend/app/layout.tsx",
-    "frontend/app/page.tsx",
-    "frontend/app/globals.css",
-    "contratos/dados.ts",
-    ".github/workflows/ci.yml",
-    ".github/workflows/deploy.yml",
-    ".githooks/pre-commit",
-    "vercel.json"
-   ],
-   "depends_on": [],
-   "complexity": 5,
-   "risk": 2,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": true,
-   "changes_behavior": false
+  "feature": "painel-mercado-f1-cotacoes",
+  "gate": "lean",
+  "deploy_check": {
+    "guilhermeroessing/painel-mercado": "curl -fsS \"${PAINEL_URL:-https://painel-mercado.vercel.app}/\" | grep -q 'name=\"versao\" content=\"<sha>\"'"
   },
-  {
-   "id": "T2",
-   "title": "Watchlist em config.yaml e parser do COTAHIST",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "pipeline/config.yaml",
-    "pipeline/config.ts",
-    "pipeline/coleta/cotahist.ts",
-    "pipeline/tests/fixtures/cotahist/COTAHIST_AMOSTRA.TXT"
-   ],
-   "depends_on": [
-    "T1"
-   ],
-   "complexity": 3,
-   "risk": 3,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": false,
-   "changes_behavior": true
+  "review": {
+    "scan_effort": "medium",
+    "overrides": {
+      "seguranca": {
+        "effort": "high",
+        "motivo": "BRAPI_TOKEN e VERCEL_TOKEN em workflows com contents:write e force-push da branch data; parâmetro ?t= vira caminho de fetch"
+      },
+      "contratos": {
+        "effort": "high",
+        "motivo": "parse de 3 fontes externas na borda (COTAHIST largura fixa, brapi, SGS) e contrato JSON pipeline→site sem versão"
+      }
+    }
   },
-  {
-   "id": "T3",
-   "title": "Backfill: séries por ativo em data/historico/{TICKER}.json e manifest",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "pipeline/saida.ts",
-    "pipeline/calculo/serie.ts",
-    "pipeline/manifest.ts",
-    "pipeline/tarefas/backfill.ts",
-    "pipeline/main.ts"
-   ],
-   "depends_on": [
-    "T2"
-   ],
-   "complexity": 3,
-   "risk": 3,
-   "model": "haiku",
-   "effort": "medium",
-   "has_ui": false,
-   "changes_behavior": true
-  },
-  {
-   "id": "T4",
-   "title": "Cliente brapi com timeout, retry, 429 e contador de cota",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "pipeline/coleta/brapi.ts",
-    "pipeline/coleta/contador.ts",
-    "pipeline/tests/fixtures/brapi/quote-PETR4.json",
-    "pipeline/tests/fixtures/brapi/erro-404.json",
-    "pipeline/tests/fixtures/brapi/erro-429.json"
-   ],
-   "depends_on": [
-    "T1"
-   ],
-   "complexity": 3,
-   "risk": 3,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": false,
-   "changes_behavior": true
-  },
-  {
-   "id": "T5",
-   "title": "Tarefas cotacoes e diario (cotacoes.json, var 12m, sparkline, candle do dia)",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "pipeline/calculo/variacao.ts",
-    "pipeline/tarefas/execucao.ts",
-    "pipeline/tarefas/cotacoes.ts",
-    "pipeline/tarefas/diario.ts",
-    "pipeline/main.ts",
-    "scripts/dados-exemplo.ts",
-    "package.json"
-   ],
-   "depends_on": [
-    "T3",
-    "T4"
-   ],
-   "complexity": 3,
-   "risk": 3,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": false,
-   "changes_behavior": true
-  },
-  {
-   "id": "T6",
-   "title": "Coletor do CDI (BCB SGS série 12) em data/macro/cdi.json",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "pipeline/coleta/bcb_sgs.ts",
-    "pipeline/tarefas/cdi.ts",
-    "pipeline/main.ts",
-    "pipeline/tests/fixtures/sgs/serie-12.json"
-   ],
-   "depends_on": [
-    "T5"
-   ],
-   "complexity": 3,
-   "risk": 2,
-   "model": "haiku",
-   "effort": "medium",
-   "has_ui": false,
-   "changes_behavior": true
-  },
-  {
-   "id": "T7",
-   "title": "Workflows cotacoes.yml, diario.yml, backfill.yml e deploy com dados",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    ".github/workflows/cotacoes.yml",
-    ".github/workflows/diario.yml",
-    ".github/workflows/backfill.yml",
-    ".github/workflows/deploy.yml",
-    "scripts/preparar-dados.sh",
-    "scripts/publicar-dados.sh",
-    "README.md"
-   ],
-   "depends_on": [
-    "T6"
-   ],
-   "complexity": 3,
-   "risk": 3,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": false,
-   "changes_behavior": false
-  },
-  {
-   "id": "T8",
-   "title": "Base do site: formatação pt-BR, carga de JSON, cabeçalho, rodapé e dados de exemplo",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "frontend/src/format.ts",
-    "frontend/src/dados/carregar.ts",
-    "frontend/src/ui/Cabecalho.tsx",
-    "frontend/src/ui/Rodape.tsx",
-    "frontend/app/layout.tsx",
-    "frontend/app/globals.css"
-   ],
-   "depends_on": [
-    "T1"
-   ],
-   "complexity": 3,
-   "risk": 2,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": true,
-   "changes_behavior": true
-  },
-  {
-   "id": "T9",
-   "title": "Página inicial com a lista dos 30 ativos e sparkline",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "frontend/app/page.tsx",
-    "frontend/src/ui/ListaAtivos.tsx",
-    "frontend/src/ui/Sparkline.tsx",
-    "frontend/src/ui/lista-ativos.module.css"
-   ],
-   "depends_on": [
-    "T8"
-   ],
-   "complexity": 3,
-   "risk": 2,
-   "model": "opus",
-   "effort": "low",
-   "has_ui": true,
-   "changes_behavior": true
-  },
-  {
-   "id": "T10",
-   "title": "Página do ativo: candles, seletor de período, atribuição e aviso de preço não ajustado",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "frontend/app/ativo/page.tsx",
-    "frontend/src/ui/PaginaAtivo.tsx",
-    "frontend/src/ui/GraficoCandles.tsx",
-    "frontend/src/ui/SeletorPeriodo.tsx",
-    "frontend/src/periodo.ts",
-    "frontend/src/ui/pagina-ativo.module.css"
-   ],
-   "depends_on": [
-    "T8"
-   ],
-   "complexity": 3,
-   "risk": 2,
-   "model": "opus",
-   "effort": "low",
-   "has_ui": true,
-   "changes_behavior": true
-  },
-  {
-   "id": "T11",
-   "title": "Indicadores técnicos como funções puras",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "frontend/src/indicadores/medias.ts",
-    "frontend/src/indicadores/ifr.ts",
-    "frontend/src/indicadores/macd.ts",
-    "frontend/src/indicadores/bollinger.ts",
-    "frontend/src/indicadores/risco.ts",
-    "frontend/src/indicadores/formulas.ts"
-   ],
-   "depends_on": [
-    "T1"
-   ],
-   "complexity": 3,
-   "risk": 3,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": false,
-   "changes_behavior": true
-  },
-  {
-   "id": "T12",
-   "title": "Indicadores na página do ativo: sobreposições, painéis, parâmetros, fórmulas e estatísticas",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "frontend/src/ui/ControlesIndicadores.tsx",
-    "frontend/src/ui/Formula.tsx",
-    "frontend/src/ui/Estatisticas.tsx",
-    "frontend/src/ui/GraficoCandles.tsx",
-    "frontend/src/ui/PaginaAtivo.tsx",
-    "frontend/src/ui/pagina-ativo.module.css"
-   ],
-   "depends_on": [
-    "T10",
-    "T11"
-   ],
-   "complexity": 3,
-   "risk": 2,
-   "model": "opus",
-   "effort": "low",
-   "has_ui": true,
-   "changes_behavior": true
-  },
-  {
-   "id": "T13",
-   "title": "Página Sobre mínima com fontes, atraso e licenças",
-   "repo": "guilhermeroessing/painel-mercado",
-   "files": [
-    "frontend/app/sobre/page.tsx"
-   ],
-   "depends_on": [
-    "T8"
-   ],
-   "complexity": 1,
-   "risk": 1,
-   "model": "sonnet",
-   "effort": "medium",
-   "has_ui": true,
-   "changes_behavior": false
-  }
- ]
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Fundação do repo e do site (em construção, CI, deploy Vercel)",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "frontend/tsconfig.json",
+        "eslint.config.mjs",
+        ".prettierrc.json",
+        ".prettierignore",
+        ".gitignore",
+        ".env.example",
+        ".nvmrc",
+        "CLAUDE.md",
+        "README.md",
+        "ESCOPO.md",
+        "vitest.config.ts",
+        "frontend/next.config.ts",
+        "frontend/app/layout.tsx",
+        "frontend/app/page.tsx",
+        "frontend/app/globals.css",
+        "contratos/dados.ts",
+        ".github/workflows/ci.yml",
+        ".github/workflows/deploy.yml",
+        ".githooks/pre-commit",
+        "vercel.json"
+      ],
+      "depends_on": [],
+      "complexity": 5,
+      "risk": 2,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": true,
+      "changes_behavior": false
+    },
+    {
+      "id": "T2",
+      "title": "Watchlist em config.yaml e parser do COTAHIST",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "pipeline/config.yaml",
+        "pipeline/config.ts",
+        "pipeline/coleta/cotahist.ts",
+        "pipeline/tests/fixtures/cotahist/COTAHIST_AMOSTRA.TXT"
+      ],
+      "depends_on": ["T1"],
+      "complexity": 3,
+      "risk": 3,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": false,
+      "changes_behavior": true
+    },
+    {
+      "id": "T3",
+      "title": "Backfill: séries por ativo em data/historico/{TICKER}.json e manifest",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "pipeline/saida.ts",
+        "pipeline/calculo/serie.ts",
+        "pipeline/manifest.ts",
+        "pipeline/tarefas/backfill.ts",
+        "pipeline/main.ts"
+      ],
+      "depends_on": ["T2"],
+      "complexity": 3,
+      "risk": 3,
+      "model": "haiku",
+      "effort": "medium",
+      "has_ui": false,
+      "changes_behavior": true
+    },
+    {
+      "id": "T4",
+      "title": "Cliente brapi com timeout, retry, 429 e contador de cota",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "pipeline/coleta/brapi.ts",
+        "pipeline/coleta/contador.ts",
+        "pipeline/tests/fixtures/brapi/quote-PETR4.json",
+        "pipeline/tests/fixtures/brapi/erro-404.json",
+        "pipeline/tests/fixtures/brapi/erro-429.json"
+      ],
+      "depends_on": ["T1"],
+      "complexity": 3,
+      "risk": 3,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": false,
+      "changes_behavior": true
+    },
+    {
+      "id": "T5",
+      "title": "Tarefas cotacoes e diario (cotacoes.json, var 12m, sparkline, candle do dia)",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "pipeline/calculo/variacao.ts",
+        "pipeline/tarefas/execucao.ts",
+        "pipeline/tarefas/cotacoes.ts",
+        "pipeline/tarefas/diario.ts",
+        "pipeline/main.ts",
+        "scripts/dados-exemplo.ts",
+        "package.json"
+      ],
+      "depends_on": ["T3", "T4"],
+      "complexity": 3,
+      "risk": 3,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": false,
+      "changes_behavior": true
+    },
+    {
+      "id": "T6",
+      "title": "Coletor do CDI (BCB SGS série 12) em data/macro/cdi.json",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "pipeline/coleta/bcb_sgs.ts",
+        "pipeline/tarefas/cdi.ts",
+        "pipeline/main.ts",
+        "pipeline/tests/fixtures/sgs/serie-12.json"
+      ],
+      "depends_on": ["T5"],
+      "complexity": 3,
+      "risk": 2,
+      "model": "haiku",
+      "effort": "medium",
+      "has_ui": false,
+      "changes_behavior": true
+    },
+    {
+      "id": "T7",
+      "title": "Workflows cotacoes.yml, diario.yml, backfill.yml e deploy com dados",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        ".github/workflows/cotacoes.yml",
+        ".github/workflows/diario.yml",
+        ".github/workflows/backfill.yml",
+        ".github/workflows/deploy.yml",
+        "scripts/preparar-dados.sh",
+        "scripts/publicar-dados.sh",
+        "README.md"
+      ],
+      "depends_on": ["T6"],
+      "complexity": 3,
+      "risk": 3,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": false,
+      "changes_behavior": false
+    },
+    {
+      "id": "T8",
+      "title": "Base do site: formatação pt-BR, carga de JSON, cabeçalho, rodapé e dados de exemplo",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "frontend/src/format.ts",
+        "frontend/src/dados/carregar.ts",
+        "frontend/src/ui/Cabecalho.tsx",
+        "frontend/src/ui/Rodape.tsx",
+        "frontend/app/layout.tsx",
+        "frontend/app/globals.css"
+      ],
+      "depends_on": ["T1"],
+      "complexity": 3,
+      "risk": 2,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": true,
+      "changes_behavior": true
+    },
+    {
+      "id": "T9",
+      "title": "Página inicial com a lista dos 30 ativos e sparkline",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "frontend/app/page.tsx",
+        "frontend/src/ui/ListaAtivos.tsx",
+        "frontend/src/ui/Sparkline.tsx",
+        "frontend/src/ui/lista-ativos.module.css"
+      ],
+      "depends_on": ["T8"],
+      "complexity": 3,
+      "risk": 2,
+      "model": "opus",
+      "effort": "low",
+      "has_ui": true,
+      "changes_behavior": true
+    },
+    {
+      "id": "T10",
+      "title": "Página do ativo: candles, seletor de período, atribuição e aviso de preço não ajustado",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "frontend/app/ativo/page.tsx",
+        "frontend/src/ui/PaginaAtivo.tsx",
+        "frontend/src/ui/GraficoCandles.tsx",
+        "frontend/src/ui/SeletorPeriodo.tsx",
+        "frontend/src/periodo.ts",
+        "frontend/src/ui/pagina-ativo.module.css"
+      ],
+      "depends_on": ["T8"],
+      "complexity": 3,
+      "risk": 2,
+      "model": "opus",
+      "effort": "low",
+      "has_ui": true,
+      "changes_behavior": true
+    },
+    {
+      "id": "T11",
+      "title": "Indicadores técnicos como funções puras",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "frontend/src/indicadores/medias.ts",
+        "frontend/src/indicadores/ifr.ts",
+        "frontend/src/indicadores/macd.ts",
+        "frontend/src/indicadores/bollinger.ts",
+        "frontend/src/indicadores/risco.ts",
+        "frontend/src/indicadores/formulas.ts"
+      ],
+      "depends_on": ["T1"],
+      "complexity": 3,
+      "risk": 3,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": false,
+      "changes_behavior": true
+    },
+    {
+      "id": "T12",
+      "title": "Indicadores na página do ativo: sobreposições, painéis, parâmetros, fórmulas e estatísticas",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": [
+        "frontend/src/ui/ControlesIndicadores.tsx",
+        "frontend/src/ui/Formula.tsx",
+        "frontend/src/ui/Estatisticas.tsx",
+        "frontend/src/ui/GraficoCandles.tsx",
+        "frontend/src/ui/PaginaAtivo.tsx",
+        "frontend/src/ui/pagina-ativo.module.css"
+      ],
+      "depends_on": ["T10", "T11"],
+      "complexity": 3,
+      "risk": 2,
+      "model": "opus",
+      "effort": "low",
+      "has_ui": true,
+      "changes_behavior": true
+    },
+    {
+      "id": "T13",
+      "title": "Página Sobre mínima com fontes, atraso e licenças",
+      "repo": "guilhermeroessing/painel-mercado",
+      "files": ["frontend/app/sobre/page.tsx"],
+      "depends_on": ["T8"],
+      "complexity": 1,
+      "risk": 1,
+      "model": "sonnet",
+      "effort": "medium",
+      "has_ui": true,
+      "changes_behavior": false
+    }
+  ]
 }

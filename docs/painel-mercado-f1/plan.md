@@ -45,13 +45,13 @@ Nenhuma trava a execução. O plano adota o padrão entre parênteses; trocar de
 
 Todo arquivo em `data/` usa o envelope `{ gerado_em, fonte, atraso_aprox_min, dados }`, gravado sem identação. Caminhos relativos a `data/`:
 
-| Arquivo | `dados` | Quem grava |
-|---|---|---|
-| `manifest.json` | `Manifest` | T3, T5, T6 |
-| `cotacoes.json` | `Cotacoes` | T5 |
-| `historico/{TICKER}.json` | `Candle[]`, ordem crescente de `d` | T3, T5 |
-| `macro/cdi.json` | `PontoSerie[]` | T6 |
-| `uso-brapi.json` | `UsoBrapi` | T5 |
+| Arquivo                   | `dados`                            | Quem grava |
+| ------------------------- | ---------------------------------- | ---------- |
+| `manifest.json`           | `Manifest`                         | T3, T5, T6 |
+| `cotacoes.json`           | `Cotacoes`                         | T5         |
+| `historico/{TICKER}.json` | `Candle[]`, ordem crescente de `d` | T3, T5     |
+| `macro/cdi.json`          | `PontoSerie[]`                     | T6         |
+| `uso-brapi.json`          | `UsoBrapi`                         | T5         |
 
 Duas adições ao escopo, seção 7: `Cotacao.tipo` (agrupa ações, FIIs e ETFs na página inicial) e `Cotacao.spark` (sparkline da página inicial sem baixar 30 históricos).
 
@@ -60,6 +60,7 @@ Duas adições ao escopo, seção 7: `Cotacao.tipo` (agrupa ações, FIIs e ETFs
 ## T1 — Fundação do repo e do site (em construção, CI, deploy Vercel)
 
 Arquivos a criar (repo vazio, sem commits; todos novos, linha 1):
+
 - `package.json`: 1 pacote na raiz, `"type": "module"`, `"engines": {"node": ">=22"}`, versões exatas. Dependências: `next`, `react`, `react-dom`, `lightweight-charts` (5.x), `yaml`. Dev: `typescript`, `tsx`, `vitest`, `eslint`, `eslint-config-next`, `typescript-eslint`, `prettier`, `eslint-config-prettier`, `@types/node`, `@types/react`, `@types/react-dom`, `serve`. Scripts: `dev` (`next dev frontend`), `build` (`next build frontend`), `servir` (`serve frontend/out -l 3000`), `typecheck` (`tsc --noEmit -p tsconfig.json && tsc --noEmit -p frontend/tsconfig.json`), `lint` (`eslint . && prettier --check .`), `format` (`prettier --write .`), `test` (`npm run test:site && npm run test:pipeline`), `test:site` (`vitest run --passWithNoTests`), `test:pipeline` (`node --import tsx --test --test-concurrency=2 "pipeline/tests/**/*.test.ts"`, com saída 0 sem arquivos de teste), `coletar` (`tsx pipeline/main.ts`), `prepare` (`git config core.hooksPath .githooks || true`).
 - `package-lock.json`: gerado pelo `npm install`.
 - `tsconfig.json`: `strict: true`, `noUncheckedIndexedAccess: true`, `module`/`moduleResolution` `NodeNext`, `include` `pipeline`, `contratos`, `scripts`, `vitest.config.ts`.
@@ -96,12 +97,14 @@ Arquivos a criar (repo vazio, sem commits; todos novos, linha 1):
 Padrão do repo: repo vazio, sem padrão. As tasks seguintes seguem o que esta task cria.
 
 Comportamentos:
+
 - `npm install && npm test` sem rede → saída 0 com 0 testes.
 - `npm run build` sem rede → gera `frontend/out/index.html` com "em construção" e `<meta name="versao" content="local">`.
 - `git check-ignore .env` → `.env` (ignorado); `git check-ignore .env.example` → sem saída (versionado).
 - Commit com `BRAPI_TOKEN=<valor-falso-de-teste>` num arquivo staged → o hook barra o commit.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm install`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run lint`
@@ -117,6 +120,7 @@ UI: sem Impeccable. Siga `references/unslop.md`. Tela: 1 página estática, mobi
 ## T2 — Watchlist em config.yaml e parser do COTAHIST
 
 Arquivos a criar:
+
 - `pipeline/config.yaml`: `watchlist` com 30 itens `{ticker, nome, tipo}` na ordem da RN1 (ações, FIIs, ETFs), com AXIA3 no lugar de ELET3 e JBSS32 no lugar de JBSS3 (decisão 1); `brapi: {base_url: https://brapi.dev/api, limite_mensal: 12000, timeout_ms: 10000}`; `cotahist: {url_anual: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{ano}.ZIP", url_diario: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_D{ddmmaaaa}.ZIP", ano_inicial: 1995}`; `sgs: {base_url: https://api.bcb.gov.br/dados/serie, cdi: 12}`. Os nomes vêm do `NOMRES` do COTAHIST e da razão social, sem linguagem de recomendação.
 - `pipeline/config.ts`:
   - `export type AtivoConfig = { ticker: string; nome: string; tipo: TipoAtivo };`
@@ -133,6 +137,7 @@ Arquivos a criar:
 Padrão do repo: tipos de `contratos/dados.ts` (T1). Leitura de arquivo em stream, sem dependência nova.
 
 Comportamentos:
+
 - Linha real de PETR4 de 25/11/2026 → `{ticker: "PETR4", d: "2026-11-25", o: 40.7, h: 41.51, l: 40.41, c: 41.36, v: 64227800}`.
 - Linha de PETR4F (fracionário), de opção, header e trailer → `null`.
 - Linha com FATCOT 1000 → preços divididos por 1000.
@@ -140,6 +145,7 @@ Comportamentos:
 - `config.yaml` com ticker repetido ou `tipo: acoes` → `carregarConfig` lança erro com o campo.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint pipeline/config.ts pipeline/coleta/cotahist.ts`
 - Conferência manual: `npx tsx -e` que roda `lerCotahist` na fixture e imprime os registros. Compare com os números acima.
@@ -150,6 +156,7 @@ Domínios da code-guard: `contratos`, `modularidade`, `arquitetura`.
 ## T3 — Backfill: séries por ativo em data/historico/{TICKER}.json e manifest
 
 Arquivos a criar:
+
 - `pipeline/saida.ts`:
   - `export async function gravarJson<T>(dataDir: string, caminho: string, envelope: Envelope<T>): Promise<void>`: `JSON.stringify` sem identação, grava em arquivo temporário no mesmo diretório e faz `rename`. Cria o diretório se faltar.
   - `export async function lerJson<T>(dataDir: string, caminho: string): Promise<Envelope<T> | null>`: `null` se o arquivo não existe; lança se o JSON é inválido.
@@ -167,6 +174,7 @@ Arquivos a criar:
 Padrão do repo: tipos e `CAMINHOS` de `contratos/dados.ts:1` (T1); `lerCotahist` de `pipeline/coleta/cotahist.ts` (T2).
 
 Comportamentos:
+
 - `npm run coletar -- --tarefa backfill --arquivo pipeline/tests/fixtures/cotahist/COTAHIST_AMOSTRA.TXT --data-dir <tmp>` → `<tmp>/historico/PETR4.json` com `dados: [{"d":"2026-11-25","o":40.7,"h":41.51,"l":40.41,"c":41.36,"c_bruto":41.36,"v":64227800}]`, sem identação, e `<tmp>/manifest.json` com `historico/PETR4.json` `ok`.
 - Rodar 2 vezes a mesma entrada → arquivo igual, sem candle repetido.
 - Rodar com 2 anos em ordem inversa → série em ordem crescente de data.
@@ -175,6 +183,7 @@ Comportamentos:
 - Falha no meio da gravação → o arquivo antigo continua válido (rename atômico).
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint pipeline/saida.ts pipeline/calculo/serie.ts pipeline/manifest.ts pipeline/tarefas/backfill.ts pipeline/main.ts`
 - O comando `coletar` acima com `--data-dir` no scratchpad, 2 vezes.
@@ -185,6 +194,7 @@ Domínios da code-guard: `contratos`, `resiliencia`, `observabilidade`, `modular
 ## T4 — Cliente brapi com timeout, retry, 429 e contador de cota
 
 Arquivos a criar:
+
 - `pipeline/coleta/brapi.ts`:
   - `export type CotacaoBrapi = { ticker: string; preco: number; abertura: number; maxima: number; minima: number; var_dia_pct: number; volume: number; ts: string };`
   - `export type ResultadoBrapi = { tipo: "ok"; cotacao: CotacaoBrapi } | { tipo: "limite" } | { tipo: "nao_encontrado" } | { tipo: "falha"; motivo: string };`
@@ -204,6 +214,7 @@ Arquivos a criar:
 Padrão do repo: tipos de `contratos/dados.ts` (T1). `fetch` nativo do Node 22, sem dependência nova. Injeção de `fetch` e `esperar` para teste sem rede.
 
 Comportamentos:
+
 - Fixture `quote-PETR4.json` → `ok` com `preco` = `regularMarketPrice` da fixture.
 - Resposta 429 → `limite` com 1 requisição contada, sem nova tentativa.
 - 503, 503, 200 → `ok` com 3 requisições contadas e esperas de 1 s e 2 s.
@@ -212,6 +223,7 @@ Comportamentos:
 - `verificarCota({mes:"2026-10", requisicoes: 9000}, 30, 2026-11-02T10:00-03:00, 12000)` → `usadas` 0, `projecao` 450, `permitido: true`.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint pipeline/coleta/brapi.ts pipeline/coleta/contador.ts`
 - Conferência manual com `npx tsx -e` e um `fetch` falso que devolve a fixture.
@@ -222,6 +234,7 @@ Domínios da code-guard: `contratos`, `resiliencia`, `observabilidade`, `modular
 ## T5 — Tarefas cotacoes e diario (cotacoes.json, var 12m, sparkline, candle do dia)
 
 Arquivos a criar e a mudar:
+
 - `pipeline/calculo/variacao.ts` (novo):
   - `export function variacao12m(serie: readonly Candle[], precoAtual: number, hoje: string): number | null`: referência = `c` do último pregão com `d` ≤ hoje − 12 meses; se a série começa depois disso, o primeiro pregão (RN4). Série vazia → `null`. Resultado em %.
   - `export function sparkSemanal(serie: readonly Candle[], hoje: string): number[]`: `c` do último pregão de cada semana nos últimos 12 meses, até 53 pontos.
@@ -238,6 +251,7 @@ Arquivos a criar e a mudar:
 Padrão do repo: `percorrerWatchlist` usa `criarClienteBrapi` e `verificarCota` (T4); gravação por `gravarJson` e `registrarStatus` (T3); mescla por `mesclarSerie` (T3).
 
 Comportamentos:
+
 - Sem `BRAPI_TOKEN` → log "BRAPI_TOKEN ausente; tarefa pulada", saída 0, `data/` sem mudança.
 - `fetch` falso com a fixture de PETR4 para todos → `cotacoes.json` com 30 chaves na ordem do config, `uso-brapi.json` com 30 requisições, log com a projeção.
 - PETR4 com 429 no 5º ticker → 5 requisições, os 25 seguintes com o preço anterior e erro no manifest.
@@ -248,6 +262,7 @@ Comportamentos:
 - `npm run dados:exemplo` → `frontend/public/data/` com os 30 tickers, MXRF11 com 40 pregões e HAPV3 com erro no manifest; 2 execuções geram arquivos iguais.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint pipeline/calculo/variacao.ts pipeline/tarefas/execucao.ts pipeline/tarefas/cotacoes.ts pipeline/tarefas/diario.ts pipeline/main.ts`
 - `BRAPI_TOKEN= npm run coletar -- --tarefa cotacoes --data-dir <tmp>` → saída 0 e aviso de token ausente.
@@ -258,6 +273,7 @@ Domínios da code-guard: `contratos`, `resiliencia`, `observabilidade`, `queries
 ## T6 — Coletor do CDI (BCB SGS série 12) em data/macro/cdi.json
 
 Arquivos a criar e a mudar:
+
 - `pipeline/coleta/bcb_sgs.ts` (novo): `export async function buscarSerieSgs(opcoes: { baseUrl: string; codigo: number; inicio: string; fim: string; timeoutMs: number; fetch?: typeof fetch }): Promise<PontoSerie[]>`. URL `{baseUrl}/bcdata.sgs.{codigo}/dados?formato=json&dataInicial=dd/MM/aaaa&dataFinal=dd/MM/aaaa`. Converte `{"data":"25/11/2026","valor":"0.055131"}` em `{d:"2026-11-25", v:0.055131}`. Janela acima de 10 anos → lança antes da chamada (limite do SGS). Valor não numérico → lança com a data. 5xx e timeout → até 2 novas tentativas (1 s, 2 s).
 - `pipeline/tarefas/cdi.ts` (novo): `export async function executarCdi(opcoes: { config: Config; dataDir: string; agora: Date; fetch?: typeof fetch }): Promise<{ pontos: number }>`. Busca os últimos 3 anos, mescla por `d` com o `macro/cdi.json` existente, grava (`fonte: "BCB SGS 12"`, `atraso_aprox_min: 1440`). Falha → arquivo anterior intacto e manifest `macro/cdi.json` com erro.
 - `pipeline/main.ts` (muda): acrescenta `--tarefa cdi`.
@@ -266,11 +282,13 @@ Arquivos a criar e a mudar:
 Padrão do repo: retry e timeout de `pipeline/coleta/brapi.ts` (T4); se a lógica de retry já existir lá como função, reuse-a em vez de copiar; gravação por `gravarJson` e `registrarStatus` (T3).
 
 Comportamentos:
+
 - Fixture → `macro/cdi.json` com `dados` em ordem crescente, `v` numérico, sem identação.
 - Pedido de 11 anos → erro antes de qualquer requisição.
 - SGS fora do ar → `macro/cdi.json` anterior intacto, manifest com erro, saída 0 com aviso.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint pipeline/coleta/bcb_sgs.ts pipeline/tarefas/cdi.ts pipeline/main.ts`
 - Nenhum teste existe ainda para estes arquivos.
@@ -280,6 +298,7 @@ Domínios da code-guard: `contratos`, `resiliencia`, `observabilidade`.
 ## T7 — Workflows cotacoes.yml, diario.yml, backfill.yml e deploy com dados
 
 Arquivos a criar e a mudar:
+
 - `scripts/preparar-dados.sh` (novo): busca a branch `data` do `origin` e copia os arquivos para `./data`; se a branch não existe, cria `./data` vazio. `set -euo pipefail`.
 - `scripts/publicar-dados.sh <mensagem>` (novo): em `./data`, cria 1 commit órfão só com `*.json` e faz `git push --force origin HEAD:data` com o `GITHUB_TOKEN`. Sem mudança em relação à branch atual → não publica. Recusa publicar se `./data/manifest.json` não existe ou se há arquivo que não é `.json`.
 - `.github/workflows/cotacoes.yml` (novo): `schedule: cron "7 13-21 * * 1-5"` (10h07 a 18h07 de Brasília, 9 execuções) e `workflow_dispatch`. `concurrency: { group: dados, cancel-in-progress: false }`. `permissions: contents: write`. Passos: checkout, Node 22 com cache npm, `npm ci`, `scripts/preparar-dados.sh`, `npm run coletar -- --tarefa cotacoes` com `env: BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}` só nesse passo, `scripts/publicar-dados.sh "cotacoes <data>"`.
@@ -291,12 +310,14 @@ Arquivos a criar e a mudar:
 Padrão do repo: `.github/workflows/ci.yml` e `deploy.yml` da T1 (Node 22, cache npm, `npm ci`, ações com versão fixa).
 
 Comportamentos:
+
 - Execução de `cotacoes.yml` sem `BRAPI_TOKEN` → job verde com aviso; branch `data` sem mudança.
 - `cotacoes.yml` e `diario.yml` disparados juntos → o segundo espera o primeiro (mesmo grupo).
 - Branch `data` depois de 10 execuções → 1 commit (órfão), só `.json`.
 - Build do deploy sem branch `data` → site com "Dados ainda não disponíveis"; nunca publica os dados de exemplo da T8.
 
 Verificação:
+
 - `actionlint .github/workflows/*.yml`, se o binário existir; senão, faça o parse de cada arquivo com o pacote `yaml` (`npx tsx -e`).
 - `bash -n scripts/preparar-dados.sh scripts/publicar-dados.sh` e `shellcheck`, se existir.
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run lint`
@@ -306,6 +327,7 @@ Domínios da code-guard: `arquitetura`, `resiliencia`, `observabilidade`.
 ## T8 — Base do site: formatação pt-BR, carga de JSON, cabeçalho, rodapé e dados de exemplo
 
 Arquivos a criar e a mudar:
+
 - `frontend/src/format.ts` (novo), todas com `Intl.NumberFormat('pt-BR')` ou `Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' })`, formatadores criados 1 vez no módulo:
   - `export function formatarPreco(valor: number): string` → `"R$ 41,36"`.
   - `export function formatarPct(valor: number | null): string` → `"+1,25%"`, `"−0,80%"` (sinal de menos U+2212), `"0,00%"`, `null` → `"—"`.
@@ -320,15 +342,17 @@ Arquivos a criar e a mudar:
 - `frontend/src/ui/Rodape.tsx` (novo): `data-testid="aviso-legal"` com o texto do escopo, seção 5.5: "Conteúdo exclusivamente educativo. Não constitui recomendação de investimento. Cotações com atraso, fornecidas por terceiros, sem garantia de exatidão." e link "Sobre".
 - `frontend/app/layout.tsx` (muda, `frontend/app/layout.tsx:1` da T1): `Cabecalho` acima e `Rodape` abaixo do `<main>`.
 - `frontend/app/globals.css` (muda): cores semânticas de alta e baixa (com sinal no texto; a cor não é o único sinal), largura máxima de leitura, foco visível.
-Padrão do repo: tipos de `contratos/dados.ts` (T1); tokens de `frontend/app/globals.css` (T1). Os dados de exemplo para o QA vêm do `npm run dados:exemplo` da T5.
+  Padrão do repo: tipos de `contratos/dados.ts` (T1); tokens de `frontend/app/globals.css` (T1). Os dados de exemplo para o QA vêm do `npm run dados:exemplo` da T5.
 
 Comportamentos:
+
 - `formatarPreco(1234.5)` → `"R$ 1.234,50"`; `formatarPct(-0.8)` → `"−0,80%"`; `formatarDataHoraBrasilia("2026-11-26T18:07:00Z")` → `"26/11/2026 15:07"`.
 - Sem `frontend/public/data` → cabeçalho "Dados ainda não disponíveis" em todas as páginas.
 - Com dados de exemplo → cabeçalho com a data e a hora do `gerado_em` em horário de Brasília e "dados com atraso".
 - Rodapé com o aviso legal em toda página.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint frontend/src frontend/app/layout.tsx`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run build`
@@ -341,6 +365,7 @@ UI: sem Impeccable; siga `references/unslop.md` e a direção visual da spec, se
 ## T9 — Página inicial com a lista dos 30 ativos e sparkline
 
 Arquivos a criar e a mudar:
+
 - `frontend/app/page.tsx` (muda, `frontend/app/page.tsx:1` da T1): troca "em construção" por `<ListaAtivos />` (client component).
 - `frontend/src/ui/ListaAtivos.tsx` (novo): `export function ListaAtivos(): JSX.Element`. Carrega `cotacoes.json` e `manifest.json` com `useDados`. Linhas = chaves de `cotacoes.json` na ordem do arquivo, mais os tickers do manifest com erro e sem cotação (linha "Sem dados"). Grupos "Ações", "FIIs", "ETFs" por `tipo`. Cada linha: ticker (link `/ativo/?t=<TICKER>`), nome, preço, variação do dia, variação em 12 meses, sparkline. Ticker com erro no manifest: `data-testid="aviso-erro"` "Falha na última coleta; exibindo dado de DD/MM/AAAA HH:MM". Estados: carregando (esqueleto sem animação em loop), vazio ("Dados ainda não disponíveis"), erro de carga (mensagem e o resto da página em pé), ok. `data-testid="lista-ativos"` no contêiner e `data-testid="ativo-<TICKER>"` em cada linha.
 - `frontend/src/ui/Sparkline.tsx` (novo): `export function Sparkline(props: { valores: readonly number[]; rotulo: string }): JSX.Element`. SVG inline, sem biblioteca; `role="img"` e `aria-label` com o rótulo (ex.: "PETR4, 12 meses: de R$ 30,00 a R$ 41,36"); menos de 2 valores → `—`.
@@ -349,6 +374,7 @@ Arquivos a criar e a mudar:
 Padrão do repo: `useDados` e `format.ts` da T8; `Cotacoes`, `Manifest` de `contratos/dados.ts` (T1).
 
 Comportamentos:
+
 - Com dados de exemplo → 30 linhas: 24 ações, 4 FIIs, 2 ETFs, cada uma com ticker, nome, preço em R$, variação do dia, variação em 12 meses e sparkline.
 - HAPV3 com erro no manifest → linha com o preço anterior e o aviso de falha com a data.
 - `var_12m_pct: null` → "—".
@@ -359,6 +385,7 @@ Comportamentos:
 - JS da página inicial abaixo de 300 KB (sem `lightweight-charts` no bundle da rota `/`).
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint frontend/app/page.tsx frontend/src/ui/ListaAtivos.tsx frontend/src/ui/Sparkline.tsx`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run build` (confira o tamanho da rota `/` na saída).
@@ -371,6 +398,7 @@ UI: sem Impeccable; `references/unslop.md`. Modo: lista/tabela. Mobile primeiro.
 ## T10 — Página do ativo: candles, seletor de período, atribuição e aviso de preço não ajustado
 
 Arquivos a criar:
+
 - `frontend/app/ativo/page.tsx`: `<Suspense>` em volta de `<PaginaAtivo />` (exigência do `useSearchParams` no export estático).
 - `frontend/src/periodo.ts`:
   - `export type Periodo = "1M" | "3M" | "6M" | "1A";`
@@ -385,6 +413,7 @@ Arquivos a criar:
 Padrão do repo: `useDados` e `format.ts` da T8; `Candle` de `contratos/dados.ts` (T1).
 
 Comportamentos:
+
 - `/ativo/?t=PETR4` com dados de exemplo → candles de 1 ano, aviso de preço não ajustado, atribuição visível, cabeçalho "Atualizado em".
 - Clique em 1M → só o último mês de candles; o botão 1M fica `aria-pressed="true"`.
 - `/ativo/?t=ZZZZ3` → "Ativo ZZZZ3 não encontrado." e link para a lista.
@@ -393,6 +422,7 @@ Comportamentos:
 - 375×667 → `scroll_width` = 375.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint frontend/app/ativo frontend/src/periodo.ts frontend/src/ui/PaginaAtivo.tsx frontend/src/ui/GraficoCandles.tsx frontend/src/ui/SeletorPeriodo.tsx`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run build`
@@ -405,6 +435,7 @@ UI: sem Impeccable; `references/unslop.md`. Modo: gráfico em destaque, controle
 ## T11 — Indicadores técnicos como funções puras
 
 Arquivos a criar. Toda função recebe a série em ordem crescente e devolve um array do mesmo tamanho, com `null` onde a janela ainda não fecha; os escalares devolvem `null` sem dados suficientes.
+
 - `frontend/src/indicadores/medias.ts`:
   - `export function mediaMovelSimples(valores: readonly number[], periodo: number): (number | null)[]`
   - `export function mediaMovelExponencial(valores: readonly number[], periodo: number): (number | null)[]`: semente = MMS dos primeiros `periodo` valores; `α = 2 ÷ (periodo + 1)`.
@@ -421,6 +452,7 @@ Arquivos a criar. Toda função recebe a série em ordem crescente e devolve um 
 Padrão do repo: `PontoSerie` de `contratos/dados.ts` (T1). Sem dependência nova. Sem acesso a DOM.
 
 Comportamentos (os testes finais comparam com valores de referência calculados por script independente, por exemplo Python com as mesmas definições, tolerância 1e-6, gravados em `frontend/tests/fixtures/indicadores/`):
+
 - `mediaMovelSimples([1,2,3,4,5], 3)` → `[null, null, 2, 3, 4]`.
 - `ifr` de 20 fechamentos só em alta → 100 a partir do 15º.
 - `volatilidadeAnualizada` com menos de `janela + 1` fechamentos → `null` (tela mostra "—").
@@ -429,6 +461,7 @@ Comportamentos (os testes finais comparam com valores de referência calculados 
 - MM200 com 150 pregões → todos `null`.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint frontend/src/indicadores`
 - Nenhum teste existe ainda para estes arquivos.
@@ -438,6 +471,7 @@ Domínios da code-guard: `modularidade`, `arquitetura`.
 ## T12 — Indicadores na página do ativo: sobreposições, painéis, parâmetros, fórmulas e estatísticas
 
 Arquivos a criar e a mudar:
+
 - `frontend/src/ui/ControlesIndicadores.tsx` (novo): `export type EstadoIndicadores = { mms: Record<9 | 21 | 50 | 200, boolean>; mme: Record<9 | 21 | 50 | 200, boolean>; ifr: { ligado: boolean; periodo: number }; macd: { ligado: boolean; rapida: number; lenta: number; sinal: number }; bollinger: { ligado: boolean; periodo: number; desvios: number } };` e `export function ControlesIndicadores(props: { valor: EstadoIndicadores; aoMudar: (v: EstadoIndicadores) => void }): JSX.Element`. Caixas de seleção com `name` `mms-9`, `mms-21`, `mms-50`, `mms-200`, `mme-…`, `ifr`, `macd`, `bollinger`; campos numéricos inteiros de 2 a 250 (desvios de 0,5 a 4, passo 0,5), com `<label>`. Valor fora da faixa → campo marcado inválido e o indicador mantém o último valor válido. Tudo desligado no início. `data-testid="controles-indicadores"`.
 - `frontend/src/ui/Formula.tsx` (novo): `export function Formula(props: { id: keyof typeof FORMULAS }): JSX.Element`. Botão "Fórmula" com `data-formula`, `aria-expanded` e `aria-controls`; abre o texto `data-testid="formula-<id>"` por clique e por teclado (funciona sem hover, no toque).
 - `frontend/src/ui/Estatisticas.tsx` (novo): `data-testid="estatisticas"`. Para o período selecionado: volatilidade 21 e 63 pregões, drawdown máximo, retorno acumulado do ativo, retorno do CDI (de `macro/cdi.json`), e `data-testid="retorno-ibovespa"` "Ibovespa: dado indisponível" (decisão 3). Cada item com `Formula`. Sem dado suficiente → "—".
@@ -448,6 +482,7 @@ Arquivos a criar e a mudar:
 Padrão do repo: funções de `frontend/src/indicadores/*` (T11); `GraficoCandles` e `PaginaAtivo` da T10; `useDados` da T8.
 
 Comportamentos:
+
 - Liga MMS 21 → linha da média sobre os candles; desliga → a linha some.
 - Liga IFR → painel com a linha do IFR(14) e marcas em 30 e 70; muda o período para 9 → a linha muda.
 - Liga MACD → painel com MACD, sinal e histograma.
@@ -458,6 +493,7 @@ Comportamentos:
 - 375×667 → controles empilhados, `scroll_width` = 375.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint frontend/src/ui`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run build`
@@ -470,15 +506,18 @@ UI: sem Impeccable; `references/unslop.md`. Mobile primeiro. Fluxo: `tasks/T12/s
 ## T13 — Página Sobre mínima com fontes, atraso e licenças
 
 Arquivo a criar:
+
 - `frontend/app/sobre/page.tsx`: página estática. `data-testid="fontes"`: B3 COTAHIST (histórico diário, não ajustado por proventos), brapi.dev (cotação com atraso de cerca de 30 min, de hora em hora das 10h às 18h, dias úteis), BCB SGS série 12 (CDI, diário). Frequência e atraso de cada fonte. Frase "Preços não ajustados por proventos". `data-testid="licencas"`: TradingView Lightweight Charts™ (Apache 2.0, link para a licença e para `https://www.tradingview.com/`), dados do BCB e o aviso legal. Sem fórmulas aqui: elas ficam nos botões "Fórmula" da página do ativo.
 
 Padrão do repo: `Cabecalho` e `Rodape` da T8 já trazem o link `/sobre/`.
 
 Comportamentos:
+
 - Link "Sobre" no cabeçalho e no rodapé → `/sobre/` com as 3 fontes e as licenças.
 - 375×667 → `scroll_width` = 375.
 
 Verificação:
+
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run typecheck`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npx eslint frontend/app/sobre`
 - `~/.claude/skills/dev/scripts/heavy_lock.sh npm run build`
