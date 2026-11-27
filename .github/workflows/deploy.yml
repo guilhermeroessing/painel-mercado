@@ -35,16 +35,21 @@ jobs:
             echo "::warning::VERCEL_TOKEN, VERCEL_ORG_ID ou VERCEL_PROJECT_ID ausente: deploy ignorado."
             exit 0
           fi
-          # Diagnóstico: o HTTP do endpoint mostra se o token ou os IDs estão errados.
-          status=$(curl -s -o /tmp/vercel-projeto.json -w '%{http_code}' \
-            -H "Authorization: Bearer $VERCEL_TOKEN" \
-            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID")
-          if [ "$status" != "200" ]; then
-            echo "::error::Vercel recusou o projeto (HTTP $status). Confira VERCEL_TOKEN (escopo da equipe), VERCEL_ORG_ID e VERCEL_PROJECT_ID."
-            exit 1
-          fi
+          # Diagnóstico: HTTP de cada endpoint que o CLI usa; a resposta de erro da API diz o motivo.
+          for url in \
+            "https://api.vercel.com/v2/teams/$VERCEL_ORG_ID" \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID"; do
+            status=$(curl -s -o /tmp/vercel-resposta.json -w '%{http_code}' \
+              -H "Authorization: Bearer $VERCEL_TOKEN" "$url")
+            echo "Vercel $url -> HTTP $status"
+            if [ "$status" != "200" ]; then
+              head -c 400 /tmp/vercel-resposta.json; echo
+              echo "::error::Vercel recusou a chamada (HTTP $status). Confira VERCEL_TOKEN (escopo da equipe), VERCEL_ORG_ID e VERCEL_PROJECT_ID."
+              exit 1
+            fi
+          done
           # Vincula a pasta publicada ao projeto, para o CLI não depender de variáveis de ambiente.
           mkdir -p frontend/out/.vercel
           printf '{"projectId":"%s","orgId":"%s"}\n' "$VERCEL_PROJECT_ID" "$VERCEL_ORG_ID" > frontend/out/.vercel/project.json
           cd frontend/out
-          npx vercel@41.0.2 deploy --prod --yes --token "$VERCEL_TOKEN"
+          npx vercel@41.0.2 deploy --prod --yes --token "$VERCEL_TOKEN" --debug
